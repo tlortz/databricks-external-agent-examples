@@ -6,7 +6,6 @@ from databricks_langchain import ChatDatabricks
 
 from src.langgraph_mcp_agent.agent import create_tool_calling_agent
 from src.langgraph_mcp_agent.mcp_client import MCPClientManager, build_databricks_server_urls
-from src.langgraph_mcp_agent.tools import get_mcp_tools, list_tool_names
 
 
 @pytest.mark.integration
@@ -28,10 +27,10 @@ async def test_agent_initializes_with_databricks_model(
     )
 
     try:
-        clients = await manager.get_clients()
-        tools = await get_mcp_tools(clients)
+        tools = await manager.get_tools()
+        tool_names = [tool.name for tool in tools]
 
-        print(f"\nLoaded {len(tools)} tools: {list_tool_names(tools)}")
+        print(f"\nLoaded {len(tools)} tools: {tool_names}")
 
         # Create model
         model = ChatDatabricks(endpoint=model_name)
@@ -68,10 +67,10 @@ async def test_agent_executes_simple_query(
     )
 
     try:
-        clients = await manager.get_clients()
-        tools = await get_mcp_tools(clients)
+        tools = await manager.get_tools()
+        tool_names = [tool.name for tool in tools]
 
-        print(f"\nLoaded {len(tools)} tools: {list_tool_names(tools)}")
+        print(f"\nLoaded {len(tools)} tools: {tool_names}")
 
         # Create model and agent
         model = ChatDatabricks(endpoint=model_name)
@@ -123,10 +122,10 @@ async def test_agent_can_use_tools(
     )
 
     try:
-        clients = await manager.get_clients()
-        tools = await get_mcp_tools(clients)
+        tools = await manager.get_tools()
+        tool_names = [tool.name for tool in tools]
 
-        print(f"\nLoaded {len(tools)} tools: {list_tool_names(tools)}")
+        print(f"\nLoaded {len(tools)} tools: {tool_names}")
 
         # Create model and agent
         model = ChatDatabricks(endpoint=model_name)

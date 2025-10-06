@@ -6,7 +6,6 @@ from src.langgraph_mcp_agent.mcp_client import (
     build_databricks_server_urls,
     parse_server_list_from_env,
 )
-from src.langgraph_mcp_agent.tools import get_mcp_tools, list_tool_names
 
 
 @pytest.mark.integration
@@ -24,9 +23,9 @@ async def test_mcp_client_connects_to_databricks(workspace_client, workspace_url
 
     # Test connection
     try:
-        clients = await manager.get_clients()
-        assert clients is not None, "MCP clients should be initialized"
-        assert len(clients) > 0, "Should have at least one MCP client"
+        tools = await manager.get_tools()
+        assert tools is not None, "Tools should be retrieved"
+        assert len(tools) > 0, "Should retrieve at least one tool"
     finally:
         await manager.close()
 
@@ -45,18 +44,16 @@ async def test_mcp_client_retrieves_tools(workspace_client, workspace_url, datab
     )
 
     try:
-        clients = await manager.get_clients()
-
         # Get tools
-        tools = await get_mcp_tools(clients)
+        tools = await manager.get_tools()
 
         # Verify tools were retrieved
         assert tools is not None, "Tools should be retrieved"
         assert len(tools) > 0, f"Should retrieve at least one tool from servers: {databricks_servers}"
 
         # Log available tools
-        tool_names = list_tool_names(tools)
-        print(f"\nRetrieved {len(tools)} tools from {len(clients)} servers: {tool_names}")
+        tool_names = [tool.name for tool in tools]
+        print(f"\nRetrieved {len(tools)} tools from {len(databricks_servers)} servers: {tool_names}")
 
     finally:
         await manager.close()
@@ -93,17 +90,15 @@ async def test_mcp_servers_are_accessible(workspace_client, workspace_url, datab
     )
 
     try:
-        clients = await manager.get_clients()
-
-        # Verify clients initialized successfully
-        assert clients is not None, "MCP clients should initialize with configured servers"
-        assert len(clients) == len(databricks_servers), f"Should have {len(databricks_servers)} clients"
-
         # Try to get tools to verify servers are responding
-        tools = await get_mcp_tools(clients)
+        tools = await manager.get_tools()
+
+        # Verify tools were retrieved
+        assert tools is not None, "Tools should be retrieved"
+        assert len(tools) > 0, "Should retrieve at least one tool"
 
         # Report results
-        print(f"\nSuccessfully connected to {len(clients)} servers, retrieved {len(tools)} tools")
+        print(f"\nSuccessfully connected to {len(databricks_servers)} servers, retrieved {len(tools)} tools")
 
     except Exception as e:
         pytest.fail(f"Failed to connect to MCP servers: {e}")

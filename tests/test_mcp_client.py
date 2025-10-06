@@ -65,9 +65,13 @@ def test_only_databricks_servers(mock_workspace_client):
 
 @pytest.mark.asyncio
 async def test_client_initialization(mock_workspace_client):
-    """Test MCP client initialization."""
-    with patch("src.langgraph_mcp_agent.mcp_client.DatabricksMCPClient") as mock_client_class:
+    """Test MCP client initialization with MultiServerMCPClient."""
+    with patch("src.langgraph_mcp_agent.mcp_client.MultiServerMCPClient") as mock_client_class:
+        # Mock the MultiServerMCPClient.get_tools() method
         mock_client = AsyncMock()
+        mock_tool = AsyncMock()
+        mock_tool.name = "test_tool"
+        mock_client.get_tools.return_value = [mock_tool]
         mock_client_class.return_value = mock_client
 
         databricks_urls = ["https://test.databricks.com/api/2.0/mcp/functions/system/ai"]
@@ -75,29 +79,24 @@ async def test_client_initialization(mock_workspace_client):
             workspace_client=mock_workspace_client,
             databricks_server_urls=databricks_urls,
         )
-        clients = await manager.get_clients()
+        tools = await manager.get_tools()
 
-        assert clients is not None
-        assert len(clients) == 1
+        assert tools is not None
+        assert len(tools) == 1
+        assert tools[0].name == "test_tool"
         mock_client_class.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_context_manager(mock_workspace_client):
     """Test async context manager."""
-    with patch("src.langgraph_mcp_agent.mcp_client.DatabricksMCPClient") as mock_client_class:
-        mock_client = AsyncMock()
-        mock_client_class.return_value = mock_client
+    databricks_urls = ["https://test.databricks.com/api/2.0/mcp/functions/system/ai"]
+    manager = MCPClientManager(
+        workspace_client=mock_workspace_client,
+        databricks_server_urls=databricks_urls,
+    )
 
-        databricks_urls = ["https://test.databricks.com/api/2.0/mcp/functions/system/ai"]
-        manager = MCPClientManager(
-            workspace_client=mock_workspace_client,
-            databricks_server_urls=databricks_urls,
-        )
-
-        async with manager as clients:
-            assert clients is not None
-            assert len(clients) == 1
-
-        # DatabricksMCPClient doesn't have a close method, so we just check it was created
-        mock_client_class.assert_called_once()
+    # Test that context manager works without errors
+    async with manager as mgr:
+        assert mgr is not None
+        assert isinstance(mgr, MCPClientManager)

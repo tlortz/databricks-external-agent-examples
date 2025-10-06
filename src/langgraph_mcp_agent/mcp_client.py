@@ -1,10 +1,12 @@
-"""MCP client manager for Databricks MCP servers."""
+"""MCP client manager for Databricks MCP servers using langchain-mcp-adapters."""
 
 import os
 from typing import List, Optional
 
 from databricks.sdk import WorkspaceClient
-from databricks_mcp import DatabricksMCPClient
+from databricks_mcp.oauth_provider import DatabricksOAuthClientProvider
+from langchain_core.tools import BaseTool
+from langchain_mcp_adapters.client import MultiServerMCPClient
 
 
 def parse_server_list_from_env(env_var: str) -> List[str]:
@@ -55,7 +57,7 @@ def build_databricks_server_urls(workspace_url: str, server_paths: List[str]) ->
 
 
 class MCPClientManager:
-    """Manager for Databricks MCP client connections."""
+    """Manager for MCP client connections using langchain-mcp-adapters."""
 
     def __init__(
         self,
@@ -84,7 +86,7 @@ class MCPClientManager:
 
         self.databricks_server_urls = databricks_server_urls or []
         self.external_server_urls = external_server_urls or []
-        self._clients: List[DatabricksMCPClient] = []
+        self._client: Optional[MultiServerMCPClient] = None
 
     def get_all_server_urls(self) -> List[str]:
         """Get all configured server URLs."""
@@ -93,38 +95,56 @@ class MCPClientManager:
         urls.extend(self.external_server_urls)
         return urls
 
-    async def get_clients(self) -> List[DatabricksMCPClient]:
+    async def get_tools(self) -> List[BaseTool]:
         """
-        Get or create MCP clients for all configured servers.
+        Get tools from all configured MCP servers.
 
         Returns:
-            List of initialized MCP clients (one per server URL)
+            List of LangChain tools from all MCP servers
         """
-        if not self._clients:
-            # Get all configured server URLs
+        if not self._client:
+            # Build connections dictionary for MultiServerMCPClient
             all_urls = self.get_all_server_urls()
             if not all_urls:
                 raise ValueError("At least one MCP server URL must be configured")
 
-            # Create a client for each server URL
-            for server_url in all_urls:
-                client = DatabricksMCPClient(
-                    server_url=server_url,
-                    workspace_client=self.workspace_client,
-                )
-                self._clients.append(client)
+            # Create Databricks OAuth provider
+            auth_provider = DatabricksOAuthClientProvider(self.workspace_client)
 
-        return self._clients
+            # Build connections - use URL as server name for simplicity
+            connections = {}
+            for idx, server_url in enumerate(all_urls):
+                # Create a unique server name
+                server_name = f"server_{idx}"
+
+                # Check if this is a Databricks or external server
+                if server_url in self.databricks_server_urls:
+                    # Databricks server - use OAuth provider
+                    connections[server_name] = {
+                        "transport": "streamable_http",
+                        "url": server_url,
+                        "auth": auth_provider,
+                    }
+                else:
+                    # External server - use without auth (or could support custom auth)
+                    connections[server_name] = {
+                        "transport": "streamable_http",
+                        "url": server_url,
+                    }
+
+            self._client = MultiServerMCPClient(connections)
+
+        # Get all tools from all servers
+        return await self._client.get_tools()
 
     async def close(self):
         """Close all MCP client connections."""
-        # DatabricksMCPClient doesn't have a close method
-        # Just clear the references
-        self._clients = []
+        # MultiServerMCPClient is stateless, just clear reference
+        self._client = None
 
     async def __aenter__(self):
         """Async context manager entry."""
-        return await self.get_clients()
+        return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""

@@ -12,7 +12,6 @@ from langchain_core.messages import HumanMessage
 
 from .agent import create_tool_calling_agent
 from .mcp_client import MCPClientManager, parse_server_list_from_env, build_databricks_server_urls
-from .tools import get_mcp_tools, list_tool_names
 
 
 class LangGraphMCPApp:
@@ -120,11 +119,11 @@ class LangGraphMCPApp:
             databricks_server_urls=databricks_servers,
             external_server_urls=external_servers,
         )
-        mcp_clients = await self.mcp_manager.get_clients()
 
         print("Fetching tools from MCP servers...")
-        tools = await get_mcp_tools(mcp_clients)
-        print(f"Loaded {len(tools)} tools: {list_tool_names(tools)}")
+        tools = await self.mcp_manager.get_tools()
+        tool_names = [tool.name for tool in tools]
+        print(f"Loaded {len(tools)} tools: {tool_names}")
 
         print(f"Creating agent with model: {self.model_name}")
         model = ChatDatabricks(endpoint=self.model_name)
