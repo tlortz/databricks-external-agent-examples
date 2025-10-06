@@ -1,0 +1,24 @@
+[project]
+name = "external-langgraph-with-databricks-mcp"
+version = "0.1.0"
+description = "LangGraph agent with Databricks MCP server integration for tool calling"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    "databricks-langchain>=0.1.0",
+    "databricks-mcp>=0.1.0",
+    "databricks-sdk>=0.1.0",
+    "mlflow>=2.10.0",
+    "python-dotenv>=1.0.0",
+    "langchain-mcp-adapters>=0.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
