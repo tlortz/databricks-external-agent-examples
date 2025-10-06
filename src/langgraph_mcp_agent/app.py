@@ -161,8 +161,50 @@ class LangGraphMCPApp:
 
         return result
 
-    async def chat(self):
-        """Interactive chat loop."""
+    async def run_query_stream(self, query: str):
+        """
+        Run a query through the agent with streaming output.
+
+        Args:
+            query: User query string
+
+        Yields:
+            Chunks of the agent's response as they are generated
+        """
+        if not self.agent:
+            raise RuntimeError("Agent not initialized. Call initialize() first.")
+
+        print(f"\nProcessing query: {query}")
+
+        # Stream events from the agent
+        async for event in self.agent.astream_events(
+            {"messages": [HumanMessage(content=query)]},
+            version="v2"
+        ):
+            # Extract streaming content from AI messages
+            kind = event.get("event")
+
+            # Stream chunks from the model's response
+            if kind == "on_chat_model_stream":
+                content = event.get("data", {}).get("chunk")
+                if content and hasattr(content, "content") and content.content:
+                    yield content.content
+
+            # Also yield tool calls and results for visibility
+            elif kind == "on_tool_start":
+                tool_name = event.get("name", "unknown")
+                yield f"\n[Calling tool: {tool_name}]\n"
+
+            elif kind == "on_tool_end":
+                yield f"\n[Tool completed]\n"
+
+    async def chat(self, use_streaming: bool = True):
+        """
+        Interactive chat loop.
+
+        Args:
+            use_streaming: Whether to use streaming output (default: True)
+        """
         if not self.agent:
             await self.initialize()
 
@@ -180,11 +222,17 @@ class LangGraphMCPApp:
                 if not user_input:
                     continue
 
-                result = await self.run_query(user_input)
-
-                # Get the last AI message
-                last_message = result["messages"][-1]
-                print(f"\nAssistant: {last_message.content}\n")
+                if use_streaming:
+                    # Stream the response
+                    print("\nAssistant: ", end="", flush=True)
+                    async for chunk in self.run_query_stream(user_input):
+                        print(chunk, end="", flush=True)
+                    print("\n")
+                else:
+                    # Use non-streaming response
+                    result = await self.run_query(user_input)
+                    last_message = result["messages"][-1]
+                    print(f"\nAssistant: {last_message.content}\n")
 
             except KeyboardInterrupt:
                 print("\n\nGoodbye!")
