@@ -83,7 +83,7 @@ Edit `.env` to specify your profile, workspace, and MCP servers:
 ```env
 DATABRICKS_CONFIG_PROFILE=DEFAULT
 DATABRICKS_WORKSPACE_URL=https://your-workspace.cloud.databricks.com
-DATABRICKS_MODEL_NAME=databricks-meta-llama-3-1-70b-instruct
+DATABRICKS_MODEL_NAME=databricks-claude-sonnet-4
 
 # MCP Servers (see https://docs.databricks.com/aws/en/generative-ai/mcp/managed-mcp)
 # Example: System AI + Genie space
@@ -101,7 +101,7 @@ Edit `.env`:
 DATABRICKS_HOST=https://your-workspace.cloud.databricks.com
 DATABRICKS_TOKEN=your_databricks_token
 DATABRICKS_WORKSPACE_URL=https://your-workspace.cloud.databricks.com
-DATABRICKS_MODEL_NAME=databricks-meta-llama-3-1-70b-instruct
+DATABRICKS_MODEL_NAME=databricks-claude-sonnet-4
 
 # MCP Servers (see https://docs.databricks.com/aws/en/generative-ai/mcp/managed-mcp)
 DATABRICKS_MCP_SERVERS=/api/2.0/mcp/functions/system/ai
@@ -349,10 +349,12 @@ The workspace URL and paths are automatically combined to create full URLs like:
 
 ### Model Options
 
-Databricks models supported:
-- `databricks-meta-llama-3-1-70b-instruct` (default)
-- `databricks-meta-llama-3-1-405b-instruct`
-- `databricks-dbrx-instruct`
+Recommended Databricks models:
+- `databricks-claude-sonnet-4` (recommended, default)
+- `databricks-gpt-oss-20b`
+- Coming soon: `gpt-5`, `gemini`
+
+Other supported models:
 - Any custom Databricks model endpoint
 
 ## Troubleshooting

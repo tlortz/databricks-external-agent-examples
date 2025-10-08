@@ -37,7 +37,7 @@ class LangGraphMCPApp:
         load_dotenv()
 
         self.model_name = model_name or os.getenv(
-            "DATABRICKS_MODEL_NAME", "databricks-meta-llama-3-1-70b-instruct"
+            "DATABRICKS_MODEL_NAME", "databricks-claude-sonnet-4"
         )
         self.profile = profile or os.getenv("DATABRICKS_CONFIG_PROFILE")
         self.workspace_client = workspace_client

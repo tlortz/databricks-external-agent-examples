@@ -37,7 +37,7 @@ def workspace_url():
 @pytest.fixture(scope="session")
 def model_name():
     """Get model name from environment."""
-    return os.getenv("DATABRICKS_MODEL_NAME", "databricks-meta-llama-3-1-70b-instruct")
+    return os.getenv("DATABRICKS_MODEL_NAME", "databricks-claude-sonnet-4")
 
 
 @pytest.fixture(scope="session")
