@@ -144,7 +144,7 @@ async def main():
     # Using a config profile
     app = LangGraphMCPApp(
         profile="DEFAULT",  # or "prod", "staging", etc.
-        model_name="databricks-meta-llama-3-1-70b-instruct",
+        model_name="databricks-claude-sonnet-4",
         system_prompt="You are a helpful assistant."
     )
 
